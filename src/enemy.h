@@ -21,6 +21,6 @@ void EnemyInit();
 void TryAddEnemy(EnemyType eType);
 void EnemySpawn();
 void EnemyUpdate();
-void EnemyDraw(Sprite* spr);
+void EnemyDraw();
 
 #endif

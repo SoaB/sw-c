@@ -12,11 +12,12 @@ typedef struct
     int mainStatus;
     int subStatus;
     AnimFrame af;
+    AnimFrame afExplod;
     Sprite slime;
+    Sprite explod;
 } Game;
 void GameInit(Game* game);
 void GameDestroy(Game* game);
 void GameUpdate(Game* game);
 void GameDraw(Game* game);
-
 #endif

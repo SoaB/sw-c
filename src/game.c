@@ -3,6 +3,7 @@
 #include "player.h"
 #include "raylib.h"
 #include "sprite.h"
+#include "spritepool.h"
 #include "timer.h"
 #include "weapon.h"
 #include <stdlib.h>
@@ -14,8 +15,7 @@ void GameInit(Game* game)
     EnemyInit();
     WeaponInit((Vec2) { 0, 0 });
     gTimer.Init();
-    game->af = AnimFrameLoad("asset/SlimeIdle.png", 32, 32);
-    SpriteLoad(&game->slime, game->af);
+    SpritePoolInit();
     TryAddEnemy(ENEMY_SLIME);
     TryAddEnemy(ENEMY_SLIME);
     TryAddEnemy(ENEMY_SLIME);
@@ -24,7 +24,7 @@ void GameInit(Game* game)
 
 void GameDestroy(Game* game)
 {
-    AnimFrameUnload(&game->af);
+    SpritePoolDestroy();
 }
 void GameUpdate(Game* game)
 {
@@ -32,13 +32,13 @@ void GameUpdate(Game* game)
     EnemySpawn();
     PlayerUpdate();
     EnemyUpdate();
-    SpriteUpdate(&game->slime);
+    SpritePoolUpdate();
     WeasponUpdate(PlayerPosition());
 }
 
 void GameDraw(Game* game)
 {
     PlayerDraw();
-    EnemyDraw(&game->slime);
+    EnemyDraw();
     WeaponDraw();
 }

@@ -2,19 +2,15 @@
 #define __EXPLOD_H__
 
 #include "commdef.h"
-
-#define EXPLOD_PARTICLES 20
-#define EXPLOD_TIME 60
+#include "sprite.h"
 
 typedef struct {
-    Vector2 pos[EXPLOD_PARTICLES];
-    Vector2 vel[EXPLOD_PARTICLES];
-    Color color[EXPLOD_PARTICLES];
+    Vec2 pos;
     int lifeTime;
 } Explod;
 
 void ExplodInit(Explod* e);
 void ExplodStart(Explod* e, Vec2 target);
 void ExplodUpdate(Explod* e);
-void ExplodDraw(Explod* e);
+void ExplodDraw(Explod* e, Sprite* s);
 #endif

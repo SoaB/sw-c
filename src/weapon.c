@@ -47,7 +47,7 @@ void WeaponInit(Vec2 pos)
     for (int i = 0; i < 30; i++) {
         rBullet.pos[i] = pos;
     }
-    rBullet.size = 4;
+    rBullet.size = 2;
     rBullet.radius = 1.0F;
     rBullet.attackRange = 1.0F;
     rBullet.speed = 50.0F;
@@ -72,7 +72,6 @@ void WeaponDraw()
 {
     for (int i = 0; i < 30; i++) {
         Vec2 pos = Vector2Scale(rBullet.pos[i], CELL_SIZE);
-        pos = Vector2Add(pos, (Vec2) { CELL_SIZE / 2, CELL_SIZE / 2 });
-        DrawCircleV(pos, rBullet.size, GREEN);
+        DrawCircleV(pos, rBullet.size, RED);
     }
 }

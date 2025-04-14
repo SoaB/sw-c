@@ -10,5 +10,6 @@ void PlayerDraw();
 Vec2 PlayerPosition();
 float PlayerColliRadius();
 int PlayerAttackDamage();
+void PlayerTakeDamage(float damage);
 
 #endif

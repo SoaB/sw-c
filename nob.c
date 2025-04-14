@@ -21,6 +21,7 @@ static const char* src_files[] = {
     "weapon",
     "sprite",
     "explod",
+    "spritepool",
 };
 bool Build()
 {

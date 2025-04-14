@@ -1,4 +1,5 @@
 #include "player.h"
+#include "commdef.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "timer.h"
@@ -21,7 +22,7 @@ void PlayerInit(Vec2 pos, float speed, int hp)
     player.currPos = pos;
     player.speed = speed;
     player.hp = hp;
-    player.attackRange = 3;
+    player.attackRange = 2;
     player.collisionRadius = 0.5F;
     player.damage = 1;
 }
@@ -41,7 +42,13 @@ inline int PlayerAttackDamage()
 {
     return player.attackRange;
 }
-
+inline void PlayerTakeDamage(float damage)
+{
+    player.hp -= damage;
+    if (player.hp <= 0.0) {
+        player.hp = 100;
+    }
+}
 void PlayerUpdate()
 {
     float dt = gTimer.DeltaTime();
@@ -70,5 +77,6 @@ void PlayerUpdate()
 void PlayerDraw()
 {
     Vec2 trPos = Vector2Scale(player.position, CELL_SIZE);
+    trPos = Vector2AddValue(trPos, (float)-CELL_SIZE / 2);
     DrawRectangleV(trPos, (Vec2) { CELL_SIZE, CELL_SIZE }, RED);
 }

@@ -59,7 +59,7 @@ void ExplodsUpdate()
  */
 void ExplodsDraw()
 {
-    Sprite* explodSpr = SpritePoolGet(SPR_EXPLODE);
+    Sprite* explodSpr = SpritePoolGet(SPR_EXPLODE, 0);
     // 遍歷到目前為止使用過的最高索引
     for (int i = 0; i < explodCounter; i++) {
         if (explods[i].lifeTime > 0) { // 只繪製生命週期 > 0 的活躍爆炸
@@ -79,6 +79,7 @@ void EnemyInit()
     for (int i = 0; i < MAX_ENEMY; ++i) {
         // 初始化敵人屬性
         enemies[i].type = ENEMY_NONE; // 初始狀態為無敵人
+        enemies[i].status = ENEMY_GOOD;
         enemies[i].hp = ENEMY_HP; // 設定初始生命值
         enemies[i].damage = 1; // 設定敵人傷害 (未使用?)
         enemies[i].speed = 5; // 設定敵人移動速度
@@ -98,26 +99,20 @@ void EnemyInit()
  */
 void TryAddEnemy(EnemyType eType)
 {
-    // 遍歷敵人陣列，尋找閒置位置 (ENEMY_NONE)
     for (int i = 0; i < MAX_ENEMY; ++i) {
         if (enemies[i].type == ENEMY_NONE) { // 找到一個閒置的敵人槽位
             // 設定新敵人的屬性
             enemies[i].type = eType; // 設定類型
+            enemies[i].status = ENEMY_GOOD;
             // POTENTIAL IMPROVEMENT/BUG?: 硬編碼 0-19 的隨機範圍，應使用定義的網格寬高常數
             enemies[i].pos = (Vec2) { GetRandomValue(0, 19), GetRandomValue(0, 19) }; // 在 20x20 的網格內隨機生成位置
             enemies[i].hp = ENEMY_HP; // 重設生命值
 
-            // BUG/管理策略?: 這裡直接將 enemyCounter 加 1。
-            // 但 RemoveEnemy 使用的是 swap-and-pop 策略。
-            // 如果在移除敵人後，此函式填充了中間的空位 (i < enemyCounter)，
-            // enemyCounter 可能會比實際活躍敵人數多，直到新敵人填滿到最後。
-            // 然而，由於迴圈使用 < enemyCounter，並且 RemoveEnemy 會正確處理計數器，
-            // 這可能不會導致執行錯誤，但計數器的值在某些情況下可能不直觀。
-            // 更好的方式可能是，如果 i == enemyCounter，才將 enemyCounter 加 1。
-            // 但目前的寫法搭配 RemoveEnemy 也能運作。
-            enemyCounter += 1; // 增加活躍敵人計數 (這裡的邏輯可能需要依賴 RemoveEnemy 的實現)
-
+            if (enemyCounter == i)
+                enemyCounter += 1; // 增加活躍敵人計數 (這裡的邏輯可能需要依賴 RemoveEnemy 的實現)
+#ifdef DEBUG
             printf("enemy counter : %d\n", enemyCounter); // 打印敵人數量 (用於調試)
+#endif
             return; // 成功添加後返回
         }
     }
@@ -152,7 +147,9 @@ void RemoveEnemy(int index)
         // 確保計數器不為負
         if (enemyCounter < 0)
             enemyCounter = 0;
+#ifdef DEBUG
         printf("enemy counter after remove: %d\n", enemyCounter); // 調試信息
+#endif
     }
 }
 
@@ -160,7 +157,7 @@ void RemoveEnemy(int index)
  * @brief 處理敵人受到攻擊的邏輯 (命名建議: DamageEnemy 或 EnemyTakeDamage)
  * @param index 受到攻擊的敵人的索引
  */
-void EnemyAlife(int index) // Typo: "Alife" -> "Alive" or better "DamageEnemy"
+void EnemyAlife(int index)
 {
     // 檢查索引是否有效
     if (index >= MAX_ENEMY || index < 0) { // 新增 index < 0 的檢查
@@ -173,9 +170,11 @@ void EnemyAlife(int index) // Typo: "Alife" -> "Alive" or better "DamageEnemy"
 
     int damage = PlayerAttackDamage(); // 獲取玩家的攻擊傷害值
     enemies[index].hp -= damage; // 敵人扣除生命值
+    enemies[index].status = ENEMY_DAMAGE;
 
     // 檢查敵人是否死亡
     if (enemies[index].hp <= 0) {
+        enemies[index].status = ENEMY_DIE;
         TryAddExplod(enemies[index].pos); // 在敵人死亡位置產生爆炸效果
         RemoveEnemy(index); // 從陣列中移除該敵人
     }
@@ -247,7 +246,7 @@ void EnemyTouchPlayer()
 {
     Vec2 playerPos = PlayerPosition(); // 獲取玩家位置
     float playerRadius = PlayerColliRadius(); // 獲取玩家碰撞半徑
-    float weaponRadius = PlayerAttackDamage(); // 獲取武器攻擊範圍半徑
+    float weaponRadius = PlayerAttackRange(); // 獲取武器攻擊範圍半徑
 
     // 遍歷所有活躍的敵人
     for (int i = 0; i < enemyCounter; i++) {
@@ -263,27 +262,22 @@ void EnemyTouchPlayer()
         // 1. 檢查武器碰撞
         float radiusSumWeapon = weaponRadius + enemy->radius; // 武器範圍 + 敵人半徑
         if (distanceSqr < radiusSumWeapon * radiusSumWeapon && distanceSqr > 0.001F) {
-            // 武器命中敵人
             EnemyAlife(i); // 對敵人造成傷害 (或直接擊殺)
-            // 如果敵人被武器擊殺後，可能就不需要再檢查與玩家身體的碰撞了
-            // 因此，可以在這裡加上 continue; (如果 EnemyAlife 確定移除了敵人)
              if (enemies[i].type == ENEMY_NONE || enemies[i].hp <= 0) { // 檢查敵人是否已被移除
                  continue; // 如果敵人死了，跳過後續的玩家碰撞檢查
              }
-            // printf("weapon attacked!!\n"); // 調試信息
+#ifdef DEBUG
+             printf("weapon attacked!!\n"); // 調試信息
+#endif
         }
 
         // 2. 檢查玩家身體碰撞
         float radiusSumPlayer = playerRadius + enemy->radius; // 玩家半徑 + 敵人半徑
         if (distanceSqr < radiusSumPlayer * radiusSumPlayer && distanceSqr > 0.001F) {
-            // 敵人碰到玩家身體
-            // BUG: 當前邏輯是敵人碰到玩家，敵人自己死亡 (EnemyAlife(i))
-            // 正確邏輯應該是玩家受到傷害，例如調用 PlayerTakeDamage(enemy->damage);
-            // EnemyAlife(i); // <-- 這是錯誤的，會殺死敵人而不是傷害玩家
              PlayerTakeDamage(enemy->damage); // 假設有這個函式來傷害玩家
-             RemoveEnemy(i); // 敵人撞到玩家後是否消失？根據遊戲設計決定。這裡假設撞到後敵人消失。
-
-            // printf("enemy counter : %d\n", enemyCounter); // 調試信息
+#ifdef DEBUG
+             printf("enemy counter : %d\n", enemyCounter); // 調試信息
+#endif
         }
     }
 }
@@ -327,7 +321,8 @@ void EnemyUpdate()
  */
 void EnemyDraw() 
 {
-    Sprite* enemySpr = SpritePoolGet(SPR_ENEMY);
+    Sprite * enemySprGood = SpritePoolGet(SPR_ENEMY,ENEMY_GOOD); 
+    Sprite * enemySprDamage = SpritePoolGet(SPR_ENEMY,ENEMY_DAMAGE); 
     // 1. 繪製所有活躍的敵人
     for (int i = 0; i < enemyCounter; i++) {
         // 跳過非活躍敵人
@@ -336,11 +331,18 @@ void EnemyDraw()
         }
         // 將敵人的邏輯網格位置轉換為繪圖所需的像素位置
         Vec2 trPos = Vector2Scale(enemies[i].pos, CELL_SIZE);
-        // 使用傳入的 sprite 繪製敵人
-        // 注意：這裡假設所有敵人都使用同一個 sprite，如果不同類型敵人外觀不同，需要修改
-        SpriteDraw(enemySpr, trPos);
+        switch(enemies[i].status) {
+        case ENEMY_GOOD:
+            SpriteDraw(enemySprGood, trPos);
+            break;
+        case ENEMY_DAMAGE:
+            SpriteDraw(enemySprDamage, trPos);
+            break;
+        case ENEMY_DIE:
+            SpriteDraw(enemySprGood, trPos);
+            break;
+        }
     }
-
     // 2. 繪製所有活躍的爆炸效果
     ExplodsDraw();
 }

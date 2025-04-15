@@ -24,7 +24,7 @@ void PlayerInit(Vec2 pos, float speed, int hp)
     player.hp = hp;
     player.attackRange = 2;
     player.collisionRadius = 0.5F;
-    player.damage = 1;
+    player.damage = 5;
 }
 
 void PlayerDeInit()
@@ -40,8 +40,13 @@ inline float PlayerColliRadius()
 }
 inline int PlayerAttackDamage()
 {
+    return player.damage;
+}
+inline float PlayerAttackRange()
+{
     return player.attackRange;
 }
+
 inline void PlayerTakeDamage(float damage)
 {
     player.hp -= damage;

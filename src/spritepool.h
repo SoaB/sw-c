@@ -11,7 +11,7 @@ typedef enum {
 } SpriteType;
 
 void SpritePoolInit();
-Sprite* SpritePoolGet(SpriteType st);
+Sprite* SpritePoolGet(SpriteType st, int index);
 void SpritePoolDestroy();
 void SpritePoolUpdate();
 
